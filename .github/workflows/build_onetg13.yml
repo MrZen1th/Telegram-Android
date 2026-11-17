@@ -1,0 +1,82 @@
+name: Build OneTGMod13 APK
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-
+
+      - name: Provision Android SDK + NDK r27c + CMake 3.22.1
+        run: |
+          set -euo pipefail
+          SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          SM="$(command -v sdkmanager || true)"
+          if [ -z "$SM" ]; then SM="$SDK/cmdline-tools/latest/bin/sdkmanager"; fi
+          yes | "$SM" --licenses >/dev/null 2>&1 || true
+          "$SM" "platform-tools" "platforms;android-36" "build-tools;36.0.0" "cmake;3.22.1"
+          if [ ! -d "$SDK/ndk/27.2.12479018" ]; then
+            curl -sSL -o "$RUNNER_TEMP/ndk.zip" https://dl.google.com/android/repository/android-ndk-r27c-linux.zip
+            mkdir -p "$SDK/ndk"
+            unzip -q "$RUNNER_TEMP/ndk.zip" -d "$SDK/ndk"
+            mv "$SDK/ndk/android-ndk-r27c" "$SDK/ndk/27.2.12479018"
+          fi
+          echo "=== ndk: $(ls "$SDK/ndk") ==="
+          echo "=== cmake: $(ls "$SDK/cmake") ==="
+          echo "=== platforms: $(ls "$SDK/platforms" | tail -3) ==="
+
+      - name: Prepare local.properties
+        run: |
+          set -euo pipefail
+          printf 'sdk.dir=%s\n' "${ANDROID_HOME:-$ANDROID_SDK_ROOT}" > local.properties
+          echo "=== keystore ==="; ls -l TMessagesProj/config/release.keystore
+          echo "=== keys ==="; grep -nE "APP_ID|APP_HASH" TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java | head -3
+          echo "=== package ==="; grep -n "APP_PACKAGE" gradle.properties
+
+      - name: Build APK (afatRelease, arm64-v8a)
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew :TMessagesProj_App:assembleAfatRelease --stacktrace --no-daemon \
+            -Pandroid.builder.sdkDownload=true
+          mkdir -p out
+          APK="$(find TMessagesProj_App/build/outputs/apk -name '*.apk' | head -n1)"
+          echo "built: $APK"
+          test -n "$APK"
+          cp -f "$APK" out/OneTGMod13.apk
+          ls -lh out/OneTGMod13.apk
+          BT="$ANDROID_HOME/build-tools/36.0.0"
+          "$BT/apksigner" verify --print-certs out/OneTGMod13.apk 2>&1 | head -5 || true
+          echo "=== arm64 libs: $(unzip -l out/OneTGMod13.apk | grep -c 'lib/arm64-v8a/') ==="
+          sha256sum out/OneTGMod13.apk
+
+      - name: Upload OneTGMod13 APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OneTGMod13-apk
+          path: out/OneTGMod13.apk

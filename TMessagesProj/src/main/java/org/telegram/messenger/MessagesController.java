@@ -6672,6 +6672,7 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public boolean isChatNoForwards(TLRPC.Chat chat) {
+        if (true) return false; // OneTGMod: знімаємо заборону пересилання
         if (chat == null) {
             return false;
         }
@@ -11408,6 +11409,7 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public boolean sendTyping(long dialogId, long threadMsgId, int action, int classGuid) {
+        if (true) return false; // OneTGMod: не надсилаємо "друкує..."
         return sendTyping(dialogId, threadMsgId, action, null, classGuid);
     }
 
@@ -24460,6 +24462,7 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public boolean isSponsoredDisabled() {
+        if (true) return true; // OneTGMod: без реклами
         TLRPC.UserFull userFull = getUserFull(getUserConfig().getClientUserId());
         if (userFull == null) return false;
         return !userFull.sponsored_enabled;
