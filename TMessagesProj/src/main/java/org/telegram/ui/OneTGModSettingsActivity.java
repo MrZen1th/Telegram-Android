@@ -40,7 +40,7 @@ public class OneTGModSettingsActivity extends Activity {
         return AndroidUtilities.dp(v);
     }
 
-    private int color(String key) {
+    private int color(int key) {
         return Theme.getColor(key);
     }
 
