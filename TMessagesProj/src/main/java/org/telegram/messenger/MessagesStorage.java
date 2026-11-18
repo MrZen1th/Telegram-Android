@@ -14696,7 +14696,7 @@ public class MessagesStorage extends BaseController {
     }
 
     private ArrayList<Long> markMessagesAsDeletedInternal(long dialogId, ArrayList<Integer> messages, boolean deleteFiles, int mode, int threadMessageId) {
-        if (true) return new ArrayList<>(); // OneTGMod: анти-видалення
+        if (OneTGModConfig.isAntiDelete()) return new ArrayList<>(); // OneTGMod: анти-видалення
         SQLiteCursor cursor = null;
         SQLitePreparedStatement state = null;
         try {

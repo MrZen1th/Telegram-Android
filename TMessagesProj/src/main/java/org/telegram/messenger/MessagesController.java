@@ -6672,7 +6672,7 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public boolean isChatNoForwards(TLRPC.Chat chat) {
-        if (true) return false; // OneTGMod: знімаємо заборону пересилання
+        if (OneTGModConfig.isAllowForwards()) return false; // OneTGMod: знімаємо заборону пересилання
         if (chat == null) {
             return false;
         }
@@ -10554,7 +10554,7 @@ public class MessagesController extends BaseController implements NotificationCe
         checkReadTasks();
 
         if (getUserConfig().isClientActivated()) {
-            if (!ignoreSetOnline && getConnectionsManager().getPauseTime() == 0 && ApplicationLoader.isScreenOn && !ApplicationLoader.mainInterfacePausedStageQueue) {
+            if (!OneTGModConfig.isHideOnline() && !ignoreSetOnline && getConnectionsManager().getPauseTime() == 0 && ApplicationLoader.isScreenOn && !ApplicationLoader.mainInterfacePausedStageQueue) {
                 if (ApplicationLoader.mainInterfacePausedStageQueueTime != 0 && Math.abs(ApplicationLoader.mainInterfacePausedStageQueueTime - System.currentTimeMillis()) > 1000) {
                     if (statusSettingState != 1 && (lastStatusUpdateTime == 0 || Math.abs(System.currentTimeMillis() - lastStatusUpdateTime) >= 55000 || offlineSent)) {
                         statusSettingState = 1;
@@ -11409,7 +11409,7 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public boolean sendTyping(long dialogId, long threadMsgId, int action, int classGuid) {
-        if (true) return false; // OneTGMod: не надсилаємо "друкує..."
+        if (OneTGModConfig.isHideTyping()) return false; // OneTGMod: не надсилаємо "друкує..."
         return sendTyping(dialogId, threadMsgId, action, null, classGuid);
     }
 
@@ -24462,7 +24462,7 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public boolean isSponsoredDisabled() {
-        if (true) return true; // OneTGMod: без реклами
+        if (OneTGModConfig.isNoAds()) return true; // OneTGMod: без реклами
         TLRPC.UserFull userFull = getUserFull(getUserConfig().getClientUserId());
         if (userFull == null) return false;
         return !userFull.sponsored_enabled;
